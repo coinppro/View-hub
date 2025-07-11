@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Iframe Blocker</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden; /* ป้องกันเลื่อนหน้า */
+    }
+
+    /* ซ่อน Header และ Footer ของ Blogger */
+    header, footer,
+    #header, #footer,
+    .header, .footer,
+    .blogger-viewport, .navbar,
+    .widget.Header, .footer-outer {
+      display: none !important;
+      height: 0 !important;
+      visibility: hidden !important;
+    }
+
+    iframe {
+      position: fixed;
+      top: 0;
+      left: 0;
+      border: none;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+
+<iframe
+  class="myIframe"
+  src="https://supjav.com/"
+  loading="lazy"
+  sandbox="allow-forms allow-top-navigation allow-downloads allow-same-origin allow-scripts"
+  scrolling="yes"
+  allow="encrypted-media"
+  allowfullscreen>
+</iframe>
+
+<script>
+  const iframes = document.querySelectorAll('.myIframe');
+
+  iframes.forEach(iframe => {
+    iframe.addEventListener('load', () => {
+      try {
+        const iframeWindow = iframe.contentWindow;
+
+        // บล็อกการเปลี่ยนเส้นทาง
+        iframeWindow.onbeforeunload = function () {
+          return "You are about to leave the page. Are you sure?";
+        };
+
+        // บล็อก popup
+        const originalOpen = iframeWindow.open;
+        iframeWindow.open = function () {
+          console.log("Popup blocked");
+          return null;
+        };
+
+        // เฝ้าดู DOM เพื่อบล็อก script ใหม่
+        const observer = new MutationObserver(mutations => {
+          mutations.forEach(mutation => {
+            if (mutation.type === 'childList') {
+              mutation.addedNodes.forEach(node => {
+                if (node.nodeName === 'SCRIPT') {
+                  node.parentNode.removeChild(node);
+                  console.log("Script removed");
+                }
+              });
+            }
+          });
+        });
+
+        // เริ่มสังเกตการณ์
+        observer.observe(iframeWindow.document, {
+          childList: true,
+          subtree: true
+        });
+
+      } catch (e) {
+        console.error("Unable to access iframe content: ", e);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
